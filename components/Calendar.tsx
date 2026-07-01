@@ -102,7 +102,7 @@ export default function Calendar({ year, month, days, onPrev, onNext }: Calendar
               </span>
 
               {!day.isFuture && day.userSpendings.map((u) => (
-                <span key={u.name} className="text-[10px] text-rose-500 leading-tight block truncate">
+                <span key={u.name} className="text-[10px] text-gray-500 leading-tight block truncate">
                   {u.name}:{formatKRW(u.amount)}
                 </span>
               ))}
