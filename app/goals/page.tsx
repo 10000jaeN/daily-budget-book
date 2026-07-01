@@ -83,7 +83,7 @@ export default function GoalsPage() {
           placeholder="목표 이름 (예: 여행 경비)"
           required
           maxLength={50}
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          className="w-full border border-gray-200 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400"
         />
 
         <div className="relative">
@@ -104,7 +104,7 @@ export default function GoalsPage() {
         <button
           type="submit"
           disabled={submitting || !title || !amount}
-          className="w-full bg-indigo-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          className="w-full bg-indigo-600 text-white rounded-xl py-3.5 text-base font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors min-h-[48px]"
         >
           {submitting ? "추가 중..." : "목표 추가"}
         </button>

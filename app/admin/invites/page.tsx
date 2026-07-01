@@ -85,7 +85,7 @@ export default function InvitesPage() {
         <button
           onClick={createInvite}
           disabled={creating}
-          className="w-full bg-indigo-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          className="w-full bg-indigo-600 text-white rounded-xl py-3.5 text-base font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors min-h-[48px]"
         >
           {creating ? "생성 중..." : "초대 링크 생성"}
         </button>

@@ -34,25 +34,25 @@ export default function SpendingList({ spendings, isAdmin, onDelete }: SpendingL
       {spendings.map((s) => (
         <li
           key={s.id}
-          className="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center justify-between shadow-sm"
+          className="bg-white rounded-xl border border-gray-100 px-4 py-3.5 flex items-center justify-between shadow-sm"
         >
-          <div>
-            <p className="text-sm font-medium text-gray-800">{s.memo}</p>
-            <p className="text-xs text-gray-400 mt-0.5">
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-medium text-gray-800 truncate">{s.memo}</p>
+            <p className="text-sm text-gray-400 mt-0.5">
               {s.user.name} · {new Date(s.createdAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-rose-600">
+          <div className="flex items-center gap-3 ml-3 shrink-0">
+            <span className="text-base font-bold text-rose-600">
               -{s.amount.toLocaleString()}원
             </span>
             {isAdmin && (
               <button
                 onClick={() => handleDelete(s.id)}
-                className="text-gray-300 hover:text-red-500 transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors"
                 aria-label="삭제"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>

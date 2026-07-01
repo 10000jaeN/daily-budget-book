@@ -129,7 +129,7 @@ export default function SettingsPage() {
                 placeholder="금액 입력"
                 min="1"
                 required
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 pr-8"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400 pr-8"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">원</span>
             </div>
@@ -142,7 +142,7 @@ export default function SettingsPage() {
               value={effectiveFrom}
               onChange={(e) => setEffectiveFrom(e.target.value)}
               required
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
           </div>
 
@@ -151,7 +151,7 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={submitting || !newAmount}
-            className="w-full bg-indigo-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            className="w-full bg-indigo-600 text-white rounded-xl py-3.5 text-base font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors min-h-[48px]"
           >
             {submitting ? "요청 중..." : "변경 요청 보내기"}
           </button>

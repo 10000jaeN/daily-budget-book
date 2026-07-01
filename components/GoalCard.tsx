@@ -28,11 +28,11 @@ export default function GoalCard({ goal, currentBalance, onDelete }: GoalCardPro
   return (
     <div className={`bg-white rounded-2xl border shadow-sm p-5 space-y-3 ${isAchieved ? "border-emerald-200 bg-emerald-50/50" : "border-gray-100"}`}>
       <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="font-semibold text-gray-800">{goal.title}</p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-semibold text-base text-gray-800">{goal.title}</p>
             {isAchieved && (
-              <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">
+              <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium shrink-0">
                 달성!
               </span>
             )}
@@ -43,23 +43,22 @@ export default function GoalCard({ goal, currentBalance, onDelete }: GoalCardPro
         </div>
         <button
           onClick={handleDelete}
-          className="text-gray-300 hover:text-red-500 transition-colors mt-0.5"
+          className="w-9 h-9 flex items-center justify-center rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors ml-2 shrink-0"
           aria-label="목표 삭제"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12" />
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
 
       {/* 프로그레스 바 */}
       <div>
-        <div className="flex justify-between text-xs text-gray-500 mb-1">
+        <div className="flex justify-between text-sm text-gray-500 mb-1.5">
           <span>{currentBalance.toLocaleString()}원</span>
-          <span>{Math.round(progress)}%</span>
+          <span className="font-medium">{Math.round(progress)}%</span>
         </div>
-        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
               isAchieved ? "bg-emerald-500" : "bg-indigo-500"
@@ -68,12 +67,12 @@ export default function GoalCard({ goal, currentBalance, onDelete }: GoalCardPro
           />
         </div>
         {!isAchieved && (
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-sm text-gray-400 mt-1.5">
             {remaining.toLocaleString()}원 더 모으면 달성
           </p>
         )}
         {isAchieved && (
-          <p className="text-xs text-emerald-600 mt-1">
+          <p className="text-sm text-emerald-600 mt-1.5">
             {new Date(goal.achievedAt!).toLocaleDateString("ko-KR")} 달성 🎉
           </p>
         )}

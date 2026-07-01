@@ -92,24 +92,24 @@ export default function BudgetVoteCard({
         <button
           onClick={() => vote(true)}
           disabled={loading}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+          className={`flex-1 py-3.5 rounded-xl text-base font-semibold transition-colors min-h-[48px] active:scale-95 ${
             myVote?.approved === true
               ? "bg-emerald-600 text-white"
               : "bg-white border border-emerald-400 text-emerald-700 hover:bg-emerald-50"
           }`}
         >
-          찬성
+          👍 찬성
         </button>
         <button
           onClick={() => vote(false)}
           disabled={loading}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+          className={`flex-1 py-3.5 rounded-xl text-base font-semibold transition-colors min-h-[48px] active:scale-95 ${
             myVote?.approved === false
               ? "bg-red-600 text-white"
               : "bg-white border border-red-300 text-red-600 hover:bg-red-50"
           }`}
         >
-          반대
+          👎 반대
         </button>
       </div>
     </div>

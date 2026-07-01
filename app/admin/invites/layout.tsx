@@ -10,7 +10,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen bg-gray-50">
       <Header userName={session.user.name} userRole={session.user.role} />
-      <main className="max-w-2xl mx-auto px-4 py-6">{children}</main>
+      <main className="max-w-2xl mx-auto px-4 py-6 pb-24 sm:pb-6">{children}</main>
     </div>
   );
 }
