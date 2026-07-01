@@ -23,7 +23,7 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
   const router = useRouter();
   const [spendings, setSpendings] = useState<Spending[]>([]);
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
-  const [balance, setBalance] = useState<number | null>(null);
+  const [allBalances, setAllBalances] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
   // 세션 사용자 정보 fetch
@@ -35,13 +35,10 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
     setLoading(true);
     const [spendRes, balanceRes] = await Promise.all([
       fetch(`/api/spending?date=${date}`, { cache: "no-store" }),
-      fetch(`/api/balance?date=${date}`, { cache: "no-store" }),
+      fetch(`/api/balance?date=${date}&all=true`, { cache: "no-store" }),
     ]);
     if (spendRes.ok) setSpendings(await spendRes.json());
-    if (balanceRes.ok) {
-      const data = await balanceRes.json();
-      setBalance(data.balance);
-    }
+    if (balanceRes.ok) setAllBalances(await balanceRes.json());
     setLoading(false);
     router.refresh();
   }, [date, router]);
@@ -61,16 +58,26 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
   const mySpendings = spendings.filter((sp) => sp.user.id === sessionUser?.id);
   const otherSpendings = spendings.filter((sp) => sp.user.id !== sessionUser?.id);
 
-  // 항목별 잔액 계산 (시간 오름차순 → 차감)
+  // 유저별 항목별 잔액 계산 (시간 오름차순 → 차감)
   const spendingBalances: Record<string, number> = {};
-  if (balance !== null) {
-    const sorted = [...mySpendings].sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
-    let running = balance + mySpent; // 지출 전 잔액
-    for (const sp of sorted) {
-      running -= sp.amount;
-      spendingBalances[sp.id] = running;
+  if (Object.keys(allBalances).length > 0) {
+    // 유저별로 그룹화
+    const byUser: Record<string, Spending[]> = {};
+    for (const sp of spendings) {
+      if (!byUser[sp.user.id]) byUser[sp.user.id] = [];
+      byUser[sp.user.id].push(sp);
+    }
+    for (const [userId, userSpendings] of Object.entries(byUser)) {
+      const endBalance = allBalances[userId] ?? 0;
+      const totalSpentByUser = userSpendings.reduce((s, sp) => s + sp.amount, 0);
+      const sorted = [...userSpendings].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+      let running = endBalance + totalSpentByUser; // 지출 전 잔액
+      for (const sp of sorted) {
+        running -= sp.amount;
+        spendingBalances[sp.id] = running;
+      }
     }
   }
 
@@ -98,12 +105,6 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
           <p className="text-xs text-gray-500 mb-1">전체 지출</p>
           <p className="text-xl font-bold text-gray-800">{totalSpent.toLocaleString()}원</p>
         </div>
-        {balance !== null && (
-          <div className="col-span-2 bg-indigo-50 rounded-xl border border-indigo-100 shadow-sm p-4">
-            <p className="text-xs text-indigo-500 mb-1">누적 남은 금액</p>
-            <p className="text-xl font-bold text-indigo-700">{balance.toLocaleString()}원</p>
-          </div>
-        )}
       </div>
 
       {/* 지출 추가 폼 */}
@@ -137,6 +138,7 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
                 spendings={otherSpendings}
                 isAdmin={sessionUser?.role === "ADMIN"}
                 onDelete={(id) => setSpendings((prev) => prev.filter((s) => s.id !== id))}
+                balances={spendingBalances}
               />
             </div>
           )}
