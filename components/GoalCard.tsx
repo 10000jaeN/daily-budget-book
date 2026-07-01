@@ -11,7 +11,7 @@ interface SavingGoal {
 interface GoalCardProps {
   goal: SavingGoal;
   currentBalance: number;
-  onDelete: (id: string) => void;
+  onDelete: () => void;
 }
 
 export default function GoalCard({ goal, currentBalance, onDelete }: GoalCardProps) {
@@ -22,7 +22,7 @@ export default function GoalCard({ goal, currentBalance, onDelete }: GoalCardPro
   const handleDelete = async () => {
     if (!confirm(`"${goal.title}" 목표를 삭제하시겠습니까?`)) return;
     const res = await fetch(`/api/goals/${goal.id}`, { method: "DELETE" });
-    if (res.ok) onDelete(goal.id);
+    if (res.ok) onDelete();
   };
 
   return (
