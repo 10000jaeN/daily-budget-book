@@ -23,6 +23,7 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
   const router = useRouter();
   const [spendings, setSpendings] = useState<Spending[]>([]);
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
+  const [balance, setBalance] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   // 세션 사용자 정보 fetch
@@ -32,10 +33,16 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
 
   const fetchSpendings = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/spending?date=${date}`, { cache: "no-store" });
-    if (res.ok) setSpendings(await res.json());
+    const [spendRes, balanceRes] = await Promise.all([
+      fetch(`/api/spending?date=${date}`, { cache: "no-store" }),
+      fetch(`/api/balance?date=${date}`, { cache: "no-store" }),
+    ]);
+    if (spendRes.ok) setSpendings(await spendRes.json());
+    if (balanceRes.ok) {
+      const data = await balanceRes.json();
+      setBalance(data.balance);
+    }
     setLoading(false);
-    // 대시보드 캐시 무효화 (돌아갈 때 fresh data)
     router.refresh();
   }, [date, router]);
 
@@ -78,6 +85,12 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
           <p className="text-xs text-gray-500 mb-1">전체 지출</p>
           <p className="text-xl font-bold text-gray-800">{totalSpent.toLocaleString()}원</p>
         </div>
+        {balance !== null && (
+          <div className="col-span-2 bg-indigo-50 rounded-xl border border-indigo-100 shadow-sm p-4">
+            <p className="text-xs text-indigo-500 mb-1">누적 남은 금액</p>
+            <p className="text-xl font-bold text-indigo-700">{balance.toLocaleString()}원</p>
+          </div>
+        )}
       </div>
 
       {/* 지출 추가 폼 */}
