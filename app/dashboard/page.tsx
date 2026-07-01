@@ -10,6 +10,7 @@ interface DayData {
   available: number | null;
   isToday: boolean;
   isFuture: boolean;
+  userSpendings: { name: string; amount: number }[];
 }
 
 export default function DashboardPage() {

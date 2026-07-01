@@ -9,6 +9,7 @@ interface DayData {
   available: number | null;
   isToday: boolean;
   isFuture: boolean;
+  userSpendings: { name: string; amount: number }[];
 }
 
 interface CalendarProps {
@@ -100,11 +101,11 @@ export default function Calendar({ year, month, days, onPrev, onNext }: Calendar
                 ) : dayNum}
               </span>
 
-              {!day.isFuture && day.totalSpent > 0 && (
-                <span className="text-[10px] font-medium text-rose-500 leading-tight">
-                  -{formatKRW(day.totalSpent)}
+              {!day.isFuture && day.userSpendings.map((u) => (
+                <span key={u.name} className="text-[10px] text-rose-500 leading-tight block truncate">
+                  {u.name}:{formatKRW(u.amount)}
                 </span>
-              )}
+              ))}
 
               {day.isToday && day.available !== null && (
                 <span className="text-[10px] text-emerald-700 font-bold leading-tight">
