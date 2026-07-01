@@ -32,10 +32,12 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
 
   const fetchSpendings = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/spending?date=${date}`);
+    const res = await fetch(`/api/spending?date=${date}`, { cache: "no-store" });
     if (res.ok) setSpendings(await res.json());
     setLoading(false);
-  }, [date]);
+    // 대시보드 캐시 무효화 (돌아갈 때 fresh data)
+    router.refresh();
+  }, [date, router]);
 
   useEffect(() => {
     fetchSpendings();

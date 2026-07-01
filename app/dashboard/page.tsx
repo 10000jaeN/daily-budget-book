@@ -21,7 +21,7 @@ export default function DashboardPage() {
 
   const fetchCalendar = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/calendar?year=${year}&month=${month}`);
+    const res = await fetch(`/api/calendar?year=${year}&month=${month}`, { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();
       setDays(data.days);
