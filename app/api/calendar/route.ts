@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getAvailableBalance } from "@/lib/budget";
+import { getCumulativeBalance } from "@/lib/budget";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
 
       let available: number | null = null;
       if (isToday) {
-        available = await getAvailableBalance(session.user.id, today);
+        available = await getCumulativeBalance(session.user.id, today);
       }
 
       return {
