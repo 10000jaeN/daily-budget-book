@@ -107,11 +107,6 @@ export default function Calendar({ year, month, days, onPrev, onNext }: Calendar
                 </span>
               ))}
 
-              {day.isToday && day.available !== null && (
-                <span className="text-[10px] text-emerald-700 font-bold leading-tight">
-                  {formatKRW(day.available)}
-                </span>
-              )}
             </button>
           );
         })}
