@@ -11,7 +11,7 @@ interface Spending {
 interface SpendingListProps {
   spendings: Spending[];
   isAdmin: boolean;
-  onDelete: (id: string) => void;
+  onDelete: () => void;
   balances?: Record<string, number>;
 }
 
@@ -27,7 +27,7 @@ export default function SpendingList({ spendings, isAdmin, onDelete, balances }:
   const handleDelete = async (id: string) => {
     if (!confirm("이 지출을 삭제하시겠습니까?")) return;
     const res = await fetch(`/api/spending/${id}`, { method: "DELETE" });
-    if (res.ok) onDelete(id);
+    if (res.ok) onDelete();
   };
 
   return (
