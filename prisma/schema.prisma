@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String               @id @default(cuid())
+  email            String               @unique
+  name             String
+  passwordHash     String
+  role             Role                 @default(MEMBER)
+  createdAt        DateTime             @default(now())
+
+  spendings        Spending[]
+  invites          Invite[]             @relation("InvitedBy")
+  votes            BudgetChangeVote[]
+  budgetRequests   BudgetChangeRequest[]
+  savingGoals      SavingGoal[]
+  pushSubscription PushSubscription?
+  notifications    Notification[]
+}
+
+model Invite {
+  id          String    @id @default(cuid())
+  token       String    @unique @default(cuid())
+  invitedById String
+  invitedBy   User      @relation("InvitedBy", fields: [invitedById], references: [id])
+  usedAt      DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+}
+
+model BudgetSetting {
+  id            String               @id @default(cuid())
+  amount        Int
+  effectiveFrom DateTime
+  status        BudgetStatus         @default(PENDING)
+  createdAt     DateTime             @default(now())
+
+  changeRequest BudgetChangeRequest?
+}
+
+model BudgetChangeRequest {
+  id              String        @id @default(cuid())
+  budgetSettingId String        @unique
+  budgetSetting   BudgetSetting @relation(fields: [budgetSettingId], references: [id])
+  requestedById   String
+  requestedBy     User          @relation(fields: [requestedById], references: [id])
+  createdAt       DateTime      @default(now())
+
+  votes           BudgetChangeVote[]
+}
+
+model BudgetChangeVote {
+  id        String              @id @default(cuid())
+  requestId String
+  request   BudgetChangeRequest @relation(fields: [requestId], references: [id])
+  userId    String
+  user      User                @relation(fields: [userId], references: [id])
+  approved  Boolean
+  votedAt   DateTime            @default(now())
+
+  @@unique([requestId, userId])
+}
+
+model Spending {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  amount    Int
+  memo      String
+  date      DateTime @db.Date
+  createdAt DateTime @default(now())
+}
+
+model SavingGoal {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  title      String
+  amount     Int
+  achievedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+model PushSubscription {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  subscription Json
+  createdAt    DateTime @default(now())
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  message   String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum BudgetStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+}
+
+enum NotificationType {
+  GOAL_ACHIEVED
+  BUDGET_CHANGED
+  VOTE_REQUESTED
+}
