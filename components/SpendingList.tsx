@@ -12,9 +12,10 @@ interface SpendingListProps {
   spendings: Spending[];
   isAdmin: boolean;
   onDelete: (id: string) => void;
+  balances?: Record<string, number>;
 }
 
-export default function SpendingList({ spendings, isAdmin, onDelete }: SpendingListProps) {
+export default function SpendingList({ spendings, isAdmin, onDelete, balances }: SpendingListProps) {
   if (spendings.length === 0) {
     return (
       <div className="text-center py-10 text-gray-400 text-sm">
@@ -43,9 +44,16 @@ export default function SpendingList({ spendings, isAdmin, onDelete }: SpendingL
             </p>
           </div>
           <div className="flex items-center gap-3 ml-3 shrink-0">
-            <span className="text-base font-bold text-rose-600">
-              -{s.amount.toLocaleString()}원
-            </span>
+            <div className="text-right">
+              <span className="text-base font-bold text-rose-600 block">
+                -{s.amount.toLocaleString()}원
+              </span>
+              {balances && balances[s.id] !== undefined && (
+                <span className="text-xs text-gray-400">
+                  잔액 {balances[s.id].toLocaleString()}원
+                </span>
+              )}
+            </div>
             {isAdmin && (
               <button
                 onClick={() => handleDelete(s.id)}

@@ -61,6 +61,19 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
   const mySpendings = spendings.filter((sp) => sp.user.id === sessionUser?.id);
   const otherSpendings = spendings.filter((sp) => sp.user.id !== sessionUser?.id);
 
+  // 항목별 잔액 계산 (시간 오름차순 → 차감)
+  const spendingBalances: Record<string, number> = {};
+  if (balance !== null) {
+    const sorted = [...mySpendings].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+    let running = balance + mySpent; // 지출 전 잔액
+    for (const sp of sorted) {
+      running -= sp.amount;
+      spendingBalances[sp.id] = running;
+    }
+  }
+
   return (
     <div className="space-y-4">
       <button
@@ -110,6 +123,7 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
               spendings={mySpendings}
               isAdmin={sessionUser?.role === "ADMIN"}
               onDelete={(id) => setSpendings((prev) => prev.filter((s) => s.id !== id))}
+              balances={spendingBalances}
             />
           </div>
 
