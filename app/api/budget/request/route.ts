@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   // 모든 사용자에게 투표 요청 알림 발송
   const users = await prisma.user.findMany({ select: { id: true } });
   await prisma.notification.createMany({
-    data: users.map((u) => ({
+    data: users.map((u: { id: string }) => ({
       userId: u.id,
       type: "VOTE_REQUESTED" as const,
       message: `예산 한도 변경 요청이 있습니다. (${Number(amount).toLocaleString()}원 / ${effectiveFrom} 적용)`,

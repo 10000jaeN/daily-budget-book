@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     const users = await prisma.user.findMany({ select: { id: true } });
     await prisma.notification.createMany({
-      data: users.map((u) => ({
+      data: users.map((u: { id: string }) => ({
         userId: u.id,
         type: "BUDGET_CHANGED" as const,
         message: `예산 변경 요청이 반대로 인해 거부되었습니다.`,
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     const from = request.budgetSetting.effectiveFrom.toISOString().slice(0, 10);
 
     await prisma.notification.createMany({
-      data: users.map((u) => ({
+      data: users.map((u: { id: string }) => ({
         userId: u.id,
         type: "BUDGET_CHANGED" as const,
         message: `예산 한도가 ${amount.toLocaleString()}원으로 변경됩니다. (${from} 적용)`,
