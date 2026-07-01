@@ -55,9 +55,10 @@ export async function getAvailableBalance(
     accumulatedBudget += days * setting.amount;
   }
 
-  // 어제까지의 총 지출
+  // 어제까지의 총 지출 (하루 끝 23:59:59까지 포함)
   const yesterday = new Date(target);
   yesterday.setDate(yesterday.getDate() - 1);
+  yesterday.setHours(23, 59, 59, 999);
 
   const totalSpent = await prisma.spending.aggregate({
     where: {
@@ -124,12 +125,15 @@ export async function getCumulativeBalance(
     accumulatedBudget += days * setting.amount;
   }
 
+  const endOfTarget = new Date(target);
+  endOfTarget.setHours(23, 59, 59, 999);
+
   const totalSpent = await prisma.spending.aggregate({
     where: {
       userId,
       date: {
         gte: startDate,
-        lte: target,
+        lte: endOfTarget,
       },
     },
     _sum: { amount: true },

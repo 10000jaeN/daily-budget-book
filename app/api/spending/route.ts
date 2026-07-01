@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { checkAndNotifyGoals } from "@/lib/goalCheck";
+import { sendPushNotification } from "@/lib/push";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -50,6 +51,24 @@ export async function POST(req: NextRequest) {
 
   // 목표 달성 체크
   await checkAndNotifyGoals(session.user.id);
+
+  // 다른 유저에게 지출 등록 알림 전송
+  const otherUsers = await prisma.user.findMany({
+    where: { id: { not: session.user.id } },
+    select: { id: true },
+  });
+
+  const [year, month, day] = spending.date.toISOString().slice(0, 10).split("-");
+  const dateLabel = `${Number(month)}월 ${Number(day)}일`;
+
+  await Promise.allSettled(
+    otherUsers.map((u: { id: string }) =>
+      sendPushNotification(u.id, {
+        title: "새 지출 등록",
+        body: `${spending.user.name}님이 ${dateLabel}에 ${spending.amount.toLocaleString()}원 지출했습니다. (${spending.memo})`,
+      })
+    )
+  );
 
   return NextResponse.json(spending, { status: 201 });
 }

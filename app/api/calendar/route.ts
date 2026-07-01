@@ -56,6 +56,14 @@ export async function GET(req: NextRequest) {
         available = await getCumulativeBalance(session.user.id, today);
       }
 
+      // 유저별 지출 합산
+      const userSpentMap: Record<string, { name: string; amount: number }> = {};
+      for (const s of daySpendingsAll) {
+        if (!userSpentMap[s.user.id]) userSpentMap[s.user.id] = { name: s.user.name, amount: 0 };
+        userSpentMap[s.user.id].amount += s.amount;
+      }
+      const userSpendings = Object.values(userSpentMap);
+
       return {
         date: dateStr,
         mySpent,
@@ -63,7 +71,7 @@ export async function GET(req: NextRequest) {
         available,
         isToday,
         isFuture,
-        spendings: daySpendingsAll,
+        userSpendings,
       };
     })
   );

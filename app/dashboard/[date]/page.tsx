@@ -23,6 +23,7 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
   const router = useRouter();
   const [spendings, setSpendings] = useState<Spending[]>([]);
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
+  const [allBalances, setAllBalances] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
   // 세션 사용자 정보 fetch
@@ -32,10 +33,15 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
 
   const fetchSpendings = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/spending?date=${date}`);
-    if (res.ok) setSpendings(await res.json());
+    const [spendRes, balanceRes] = await Promise.all([
+      fetch(`/api/spending?date=${date}`, { cache: "no-store" }),
+      fetch(`/api/balance?date=${date}&all=true`, { cache: "no-store" }),
+    ]);
+    if (spendRes.ok) setSpendings(await spendRes.json());
+    if (balanceRes.ok) setAllBalances(await balanceRes.json());
     setLoading(false);
-  }, [date]);
+    router.refresh();
+  }, [date, router]);
 
   useEffect(() => {
     fetchSpendings();
@@ -51,6 +57,29 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
 
   const mySpendings = spendings.filter((sp) => sp.user.id === sessionUser?.id);
   const otherSpendings = spendings.filter((sp) => sp.user.id !== sessionUser?.id);
+
+  // 유저별 항목별 잔액 계산 (시간 오름차순 → 차감)
+  const spendingBalances: Record<string, number> = {};
+  if (Object.keys(allBalances).length > 0) {
+    // 유저별로 그룹화
+    const byUser: Record<string, Spending[]> = {};
+    for (const sp of spendings) {
+      if (!byUser[sp.user.id]) byUser[sp.user.id] = [];
+      byUser[sp.user.id].push(sp);
+    }
+    for (const [userId, userSpendings] of Object.entries(byUser)) {
+      const endBalance = allBalances[userId] ?? 0;
+      const totalSpentByUser = userSpendings.reduce((s, sp) => s + sp.amount, 0);
+      const sorted = [...userSpendings].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+      let running = endBalance + totalSpentByUser; // 지출 전 잔액
+      for (const sp of sorted) {
+        running -= sp.amount;
+        spendingBalances[sp.id] = running;
+      }
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -95,6 +124,7 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
               spendings={mySpendings}
               isAdmin={sessionUser?.role === "ADMIN"}
               onDelete={(id) => setSpendings((prev) => prev.filter((s) => s.id !== id))}
+              balances={spendingBalances}
             />
           </div>
 
@@ -108,6 +138,7 @@ export default function DateDetailPage({ params }: { params: Promise<{ date: str
                 spendings={otherSpendings}
                 isAdmin={sessionUser?.role === "ADMIN"}
                 onDelete={(id) => setSpendings((prev) => prev.filter((s) => s.id !== id))}
+                balances={spendingBalances}
               />
             </div>
           )}
