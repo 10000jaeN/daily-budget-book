@@ -26,9 +26,12 @@ export async function sendPushNotification(
       JSON.stringify(payload)
     );
   } catch (err) {
-    // 구독이 만료된 경우 삭제
-    if ((err as { statusCode?: number }).statusCode === 410) {
+    const status = (err as { statusCode?: number }).statusCode;
+    if (status === 410) {
+      // 구독 만료 → DB에서 삭제
       await prisma.pushSubscription.delete({ where: { userId } });
+    } else {
+      console.error(`[push] 알림 발송 실패 (userId=${userId}, status=${status}):`, err);
     }
   }
 }

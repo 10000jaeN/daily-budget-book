@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 interface Notification {
   id: string;
@@ -81,17 +81,39 @@ export default function NotificationBell() {
           {notifications.length === 0 ? (
             <div className="p-6 text-center text-sm text-gray-400">알림이 없습니다.</div>
           ) : (
-            notifications.map((n) => (
-              <div
-                key={n.id}
-                className={`p-3 border-b border-gray-50 last:border-0 text-sm ${!n.read ? "bg-indigo-50" : ""}`}
-              >
-                <p className="text-gray-700">{n.message}</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {new Date(n.createdAt).toLocaleString("ko-KR")}
-                </p>
-              </div>
-            ))
+            notifications.map((n) => {
+              let body: React.ReactNode;
+              if (n.type === "SPENDING_ADDED") {
+                try {
+                  const d = JSON.parse(n.message) as { name: string; color: string; amount: number; memo: string };
+                  body = (
+                    <>
+                      <span style={{ color: d.color }} className="font-semibold">{d.name}</span>
+                      <span className="text-gray-700">님이 </span>
+                      <span className="font-medium text-gray-800">{d.amount.toLocaleString()}원</span>
+                      <span className="text-gray-700"> 지출했습니다.</span>
+                      <br />
+                      <span className="text-gray-500">{d.memo}</span>
+                    </>
+                  );
+                } catch {
+                  body = <span className="text-gray-700">{n.message}</span>;
+                }
+              } else {
+                body = <span className="text-gray-700">{n.message}</span>;
+              }
+              return (
+                <div
+                  key={n.id}
+                  className={`p-3 border-b border-gray-50 last:border-0 text-sm ${!n.read ? "bg-indigo-50" : ""}`}
+                >
+                  <p className="leading-snug">{body}</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(n.createdAt).toLocaleString("ko-KR")}
+                  </p>
+                </div>
+              );
+            })
           )}
         </div>
       )}

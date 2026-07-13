@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       memo,
       date: new Date(date),
     },
-    include: { user: { select: { id: true, name: true } } },
+    include: { user: { select: { id: true, name: true, colorChip: true } } },
   });
 
   // 목표 달성 체크
@@ -58,16 +58,21 @@ export async function POST(req: NextRequest) {
     select: { id: true },
   });
 
-  const [year, month, day] = spending.date.toISOString().slice(0, 10).split("-");
-  const dateLabel = `${Number(month)}월 ${Number(day)}일`;
+  const pushBody = `${spending.user.name}님이 ${spending.amount.toLocaleString()}원 지출했습니다. (${spending.memo})`;
+  const message = JSON.stringify({
+    name: spending.user.name,
+    color: spending.user.colorChip,
+    amount: spending.amount,
+    memo: spending.memo,
+  });
 
   await Promise.allSettled(
-    otherUsers.map((u: { id: string }) =>
-      sendPushNotification(u.id, {
-        title: "새 지출 등록",
-        body: `${spending.user.name}님이 ${dateLabel}에 ${spending.amount.toLocaleString()}원 지출했습니다. (${spending.memo})`,
-      })
-    )
+    otherUsers.map(async (u: { id: string }) => {
+      await prisma.notification.create({
+        data: { userId: u.id, type: "SPENDING_ADDED", message },
+      });
+      await sendPushNotification(u.id, { title: "새 지출 등록", body: pushBody });
+    })
   );
 
   return NextResponse.json(spending, { status: 201 });
