@@ -9,7 +9,7 @@ interface DayData {
   available: number | null;
   isToday: boolean;
   isFuture: boolean;
-  userSpendings: { name: string; amount: number }[];
+  userSpendings: { name: string; amount: number; color: string }[];
 }
 
 interface CalendarProps {
@@ -22,14 +22,6 @@ interface CalendarProps {
 
 const WEEK_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 
-const USER_COLORS = [
-  { chip: "bg-rose-400",    text: "text-rose-500" },
-  { chip: "bg-blue-400",    text: "text-blue-500" },
-  { chip: "bg-emerald-400", text: "text-emerald-500" },
-  { chip: "bg-amber-400",   text: "text-amber-500" },
-  { chip: "bg-purple-400",  text: "text-purple-500" },
-];
-
 function formatKRW(amount: number) {
   if (amount >= 10000) return (amount / 10000).toFixed(amount % 10000 === 0 ? 0 : 1) + "만";
   return amount.toLocaleString("ko-KR");
@@ -39,12 +31,12 @@ export default function Calendar({ year, month, days, onPrev, onNext }: Calendar
   const router = useRouter();
   const firstDay = new Date(year, month - 1, 1).getDay();
 
-  // 이번 달에 등장하는 유저 목록 (첫 등장 순서로 색상 배정)
-  const userColorMap: Record<string, number> = {};
+  // 달에 등장하는 유저별 색상 (DB에서 온 값 사용)
+  const userColorMap: Record<string, string> = {};
   for (const day of days) {
     for (const u of day.userSpendings) {
       if (!(u.name in userColorMap)) {
-        userColorMap[u.name] = Object.keys(userColorMap).length % USER_COLORS.length;
+        userColorMap[u.name] = u.color;
       }
     }
   }
@@ -120,18 +112,17 @@ export default function Calendar({ year, month, days, onPrev, onNext }: Calendar
                 ) : dayNum}
               </span>
 
-              {!day.isFuture && day.userSpendings.map((u) => {
-                const colorIdx = userColorMap[u.name] ?? 0;
-                const color = USER_COLORS[colorIdx];
-                return (
-                  <span key={u.name} className={`flex items-center gap-0.5 leading-tight`}>
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${color.chip}`} />
-                    <span className={`text-[10px] font-medium ${color.text}`}>
-                      {formatKRW(u.amount)}
-                    </span>
+              {!day.isFuture && day.userSpendings.map((u) => (
+                <span key={u.name} className="flex items-center gap-0.5 leading-tight">
+                  <span
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ backgroundColor: u.color }}
+                  />
+                  <span className="text-[10px] font-medium" style={{ color: u.color }}>
+                    {formatKRW(u.amount)}
                   </span>
-                );
-              })}
+                </span>
+              ))}
             </button>
           );
         })}
@@ -140,9 +131,9 @@ export default function Calendar({ year, month, days, onPrev, onNext }: Calendar
       {/* 유저 범례 */}
       {legend.length > 0 && (
         <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap gap-x-4 gap-y-1.5">
-          {legend.map(([name, colorIdx]) => (
+          {legend.map(([name, color]) => (
             <span key={name} className="flex items-center gap-1.5 text-xs text-gray-600">
-              <span className={`w-2.5 h-2.5 rounded-full ${USER_COLORS[colorIdx].chip}`} />
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
               {name}
             </span>
           ))}
