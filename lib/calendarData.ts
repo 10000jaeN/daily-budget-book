@@ -8,7 +8,7 @@ export interface DayData {
   available: number | null;
   isToday: boolean;
   isFuture: boolean;
-  userSpendings: { name: string; amount: number }[];
+  userSpendings: { name: string; amount: number; color: string }[];
 }
 
 export async function getCalendarData(userId: string, year: number, month: number): Promise<DayData[]> {
@@ -17,7 +17,7 @@ export async function getCalendarData(userId: string, year: number, month: numbe
 
   const allSpendings = await prisma.spending.findMany({
     where: { date: { gte: startOfMonth, lte: endOfMonth } },
-    include: { user: { select: { id: true, name: true } } },
+    include: { user: { select: { id: true, name: true, colorChip: true } } },
   });
 
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -45,9 +45,9 @@ export async function getCalendarData(userId: string, year: number, month: numbe
 
       const available = isToday ? await getCumulativeBalance(userId, today) : null;
 
-      const userSpentMap: Record<string, { name: string; amount: number }> = {};
+      const userSpentMap: Record<string, { name: string; amount: number; color: string }> = {};
       for (const s of daySpendings) {
-        if (!userSpentMap[s.user.id]) userSpentMap[s.user.id] = { name: s.user.name, amount: 0 };
+        if (!userSpentMap[s.user.id]) userSpentMap[s.user.id] = { name: s.user.name, amount: 0, color: s.user.colorChip };
         userSpentMap[s.user.id].amount += s.amount;
       }
 

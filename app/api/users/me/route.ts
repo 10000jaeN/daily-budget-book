@@ -7,11 +7,14 @@ export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "로그인 필요" }, { status: 401 });
 
+  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { colorChip: true } });
+
   return NextResponse.json({
     id: session.user.id,
     name: session.user.name,
     email: session.user.email,
     role: session.user.role,
+    colorChip: user?.colorChip ?? "#6366f1",
   });
 }
 
@@ -19,15 +22,19 @@ export async function PUT(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "로그인 필요" }, { status: 401 });
 
-  const { name, currentPassword, newPassword } = await req.json();
+  const { name, currentPassword, newPassword, colorChip } = await req.json();
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
   if (!user) return NextResponse.json({ error: "사용자 없음" }, { status: 404 });
 
-  const updateData: { name?: string; passwordHash?: string } = {};
+  const updateData: { name?: string; passwordHash?: string; colorChip?: string } = {};
 
   if (name && name.trim()) {
     updateData.name = name.trim();
+  }
+
+  if (colorChip && /^#[0-9a-fA-F]{6}$/.test(colorChip)) {
+    updateData.colorChip = colorChip;
   }
 
   if (newPassword) {

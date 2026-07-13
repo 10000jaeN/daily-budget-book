@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     where: {
       date: { gte: startOfMonth, lte: endOfMonth },
     },
-    include: { user: { select: { id: true, name: true } } },
+    include: { user: { select: { id: true, name: true, colorChip: true } } },
   });
 
   // 날짜별 집계
@@ -57,9 +57,9 @@ export async function GET(req: NextRequest) {
       }
 
       // 유저별 지출 합산
-      const userSpentMap: Record<string, { name: string; amount: number }> = {};
+      const userSpentMap: Record<string, { name: string; amount: number; color: string }> = {};
       for (const s of daySpendingsAll) {
-        if (!userSpentMap[s.user.id]) userSpentMap[s.user.id] = { name: s.user.name, amount: 0 };
+        if (!userSpentMap[s.user.id]) userSpentMap[s.user.id] = { name: s.user.name, amount: 0, color: s.user.colorChip };
         userSpentMap[s.user.id].amount += s.amount;
       }
       const userSpendings = Object.values(userSpentMap);
