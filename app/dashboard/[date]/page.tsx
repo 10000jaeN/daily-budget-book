@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getCumulativeBalance } from "@/lib/budget";
+import { getCumulativeBalanceBatch } from "@/lib/budget";
 import DateDetailClient from "./DateDetailClient";
 
 export default async function DateDetailPage({ params }: { params: Promise<{ date: string }> }) {
@@ -23,10 +23,10 @@ export default async function DateDetailPage({ params }: { params: Promise<{ dat
     prisma.user.findMany({ select: { id: true } }),
   ]);
 
-  const balanceEntries = await Promise.all(
-    users.map(async (u: { id: string }) => [u.id, await getCumulativeBalance(u.id, new Date(date))])
+  const allBalances = await getCumulativeBalanceBatch(
+    users.map((u: { id: string }) => u.id),
+    new Date(date)
   );
-  const allBalances = Object.fromEntries(balanceEntries);
 
   const serializedSpendings = spendings.map((s) => ({
     ...s,
