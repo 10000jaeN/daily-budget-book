@@ -1,7 +1,8 @@
 "use client";
 
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import SpendingForm from "@/components/SpendingForm";
+import SpendingForm, { type CreatedSpending } from "@/components/SpendingForm";
 import SpendingList from "@/components/SpendingList";
 
 interface Spending {
@@ -20,22 +21,49 @@ interface DateDetailClientProps {
   isAdmin: boolean;
 }
 
-export default function DateDetailClient({ date, spendings, allBalances, sessionUserId, isAdmin }: DateDetailClientProps) {
+export default function DateDetailClient({ date, spendings: initialSpendings, allBalances: initialBalances, sessionUserId, isAdmin }: DateDetailClientProps) {
   const router = useRouter();
+  const [spendings, setSpendings] = useState<Spending[]>(initialSpendings);
+  const [allBalances, setAllBalances] = useState<Record<string, number>>(initialBalances);
 
-  const mySpent = spendings.filter((sp) => sp.user.id === sessionUserId).reduce((s, sp) => s + sp.amount, 0);
-  const totalSpent = spendings.reduce((s, sp) => s + sp.amount, 0);
-  const mySpendings = spendings.filter((sp) => sp.user.id === sessionUserId);
-  const otherSpendings = spendings.filter((sp) => sp.user.id !== sessionUserId);
+  const handleSpendingAdded = useCallback((spending: CreatedSpending) => {
+    setSpendings((prev) => [spending, ...prev]);
+    setAllBalances((b) => ({
+      ...b,
+      [spending.user.id]: (b[spending.user.id] ?? 0) - spending.amount,
+    }));
+  }, []);
 
-  // 유저별 항목별 잔액 계산
-  const spendingBalances: Record<string, number> = {};
-  if (Object.keys(allBalances).length > 0) {
+  const handleSpendingDeleted = useCallback((id: string) => {
+    setSpendings((prev) => {
+      const deleted = prev.find((s) => s.id === id);
+      if (deleted) {
+        setAllBalances((b) => ({
+          ...b,
+          [deleted.user.id]: (b[deleted.user.id] ?? 0) + deleted.amount,
+        }));
+      }
+      return prev.filter((s) => s.id !== id);
+    });
+  }, []);
+
+  const { mySpent, totalSpent, mySpendings, otherSpendings } = useMemo(() => ({
+    mySpent: spendings.filter((sp) => sp.user.id === sessionUserId).reduce((s, sp) => s + sp.amount, 0),
+    totalSpent: spendings.reduce((s, sp) => s + sp.amount, 0),
+    mySpendings: spendings.filter((sp) => sp.user.id === sessionUserId),
+    otherSpendings: spendings.filter((sp) => sp.user.id !== sessionUserId),
+  }), [spendings, sessionUserId]);
+
+  const spendingBalances = useMemo(() => {
+    if (Object.keys(allBalances).length === 0) return {};
+
     const byUser: Record<string, Spending[]> = {};
     for (const sp of spendings) {
       if (!byUser[sp.user.id]) byUser[sp.user.id] = [];
       byUser[sp.user.id].push(sp);
     }
+
+    const result: Record<string, number> = {};
     for (const [userId, userSpendings] of Object.entries(byUser)) {
       const endBalance = allBalances[userId] ?? 0;
       const totalSpentByUser = userSpendings.reduce((s, sp) => s + sp.amount, 0);
@@ -43,10 +71,11 @@ export default function DateDetailClient({ date, spendings, allBalances, session
       let running = endBalance + totalSpentByUser;
       for (const sp of sorted) {
         running -= sp.amount;
-        spendingBalances[sp.id] = running;
+        result[sp.id] = running;
       }
     }
-  }
+    return result;
+  }, [spendings, allBalances]);
 
   const [year, month, day] = date.split("-");
   const dateLabel = `${year}년 ${Number(month)}월 ${Number(day)}일`;
@@ -76,7 +105,7 @@ export default function DateDetailClient({ date, spendings, allBalances, session
         </div>
       </div>
 
-      <SpendingForm date={date} onSuccess={() => router.refresh()} />
+      <SpendingForm date={date} onSuccess={handleSpendingAdded} />
 
       <div className="space-y-5">
         <div>
@@ -86,7 +115,7 @@ export default function DateDetailClient({ date, spendings, allBalances, session
           <SpendingList
             spendings={mySpendings}
             isAdmin={isAdmin}
-            onDelete={() => router.refresh()}
+            onDelete={handleSpendingDeleted}
             balances={spendingBalances}
           />
         </div>
@@ -99,7 +128,7 @@ export default function DateDetailClient({ date, spendings, allBalances, session
             <SpendingList
               spendings={otherSpendings}
               isAdmin={isAdmin}
-              onDelete={() => router.refresh()}
+              onDelete={handleSpendingDeleted}
               balances={spendingBalances}
             />
           </div>

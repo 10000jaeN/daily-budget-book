@@ -1,13 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
+
+export interface CreatedSpending {
+  id: string;
+  amount: number;
+  memo: string;
+  date: string;
+  createdAt: string;
+  user: { id: string; name: string };
+}
 
 interface SpendingFormProps {
   date: string;
-  onSuccess: () => void;
+  onSuccess: (spending: CreatedSpending) => void;
 }
 
-export default function SpendingForm({ date, onSuccess }: SpendingFormProps) {
+const SpendingForm = memo(function SpendingForm({ date, onSuccess }: SpendingFormProps) {
   const [amount, setAmount] = useState("");
   const [memo, setMemo] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,9 +35,10 @@ export default function SpendingForm({ date, onSuccess }: SpendingFormProps) {
     });
 
     if (res.ok) {
+      const data: CreatedSpending = await res.json();
       setAmount("");
       setMemo("");
-      onSuccess();
+      onSuccess(data);
     } else {
       const data = await res.json();
       setError(data.error ?? "오류가 발생했습니다.");
@@ -40,7 +50,6 @@ export default function SpendingForm({ date, onSuccess }: SpendingFormProps) {
     <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
       <h3 className="font-semibold text-gray-800">지출 추가</h3>
 
-      {/* 모바일: 세로 배치 */}
       <div className="flex flex-col gap-3">
         <div className="relative">
           <input
@@ -77,4 +86,6 @@ export default function SpendingForm({ date, onSuccess }: SpendingFormProps) {
       </button>
     </form>
   );
-}
+});
+
+export default SpendingForm;
