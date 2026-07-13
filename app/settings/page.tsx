@@ -29,6 +29,13 @@ interface Me {
   role: string;
 }
 
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
+
 export default function SettingsPage() {
   const [budgetData, setBudgetData] = useState<BudgetData | null>(null);
   const [me, setMe] = useState<Me | null>(null);
@@ -40,6 +47,9 @@ export default function SettingsPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [notifSubscribed, setNotifSubscribed] = useState(false);
+  const [notifLoading, setNotifLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [budgetRes, meRes] = await Promise.all([
@@ -53,6 +63,50 @@ export default function SettingsPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setNotifPermission("unsupported");
+      return;
+    }
+    setNotifPermission(Notification.permission);
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.pushManager.getSubscription().then((sub) => setNotifSubscribed(!!sub));
+    });
+  }, []);
+
+  const handleNotifToggle = async () => {
+    setNotifLoading(true);
+    try {
+      if (notifSubscribed) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) await sub.unsubscribe();
+        await fetch("/api/push/subscribe", { method: "DELETE" });
+        setNotifSubscribed(false);
+      } else {
+        let permission = notifPermission as NotificationPermission;
+        if (permission === "default") {
+          permission = await Notification.requestPermission();
+          setNotifPermission(permission);
+        }
+        if (permission !== "granted") return;
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!),
+        });
+        await fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sub),
+        });
+        setNotifSubscribed(true);
+      }
+    } finally {
+      setNotifLoading(false);
+    }
+  };
 
   const handleRequest = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +135,39 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-gray-900">예산 설정</h1>
+      <h1 className="text-xl font-bold text-gray-900">설정</h1>
+
+      {/* 알림 설정 */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <h3 className="font-semibold text-gray-800 mb-4">알림 설정</h3>
+        {notifPermission === "unsupported" ? (
+          <p className="text-sm text-gray-400">이 브라우저는 푸시 알림을 지원하지 않습니다.</p>
+        ) : notifPermission === "denied" ? (
+          <p className="text-sm text-gray-400">브라우저 설정에서 알림 권한을 허용해주세요.</p>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-700">지출 등록 알림</p>
+              <p className="text-xs text-gray-400 mt-0.5">다른 멤버가 지출을 등록하면 알림을 받습니다.</p>
+            </div>
+            <button
+              onClick={handleNotifToggle}
+              disabled={notifLoading}
+              className={`relative w-12 h-6 rounded-full transition-colors duration-200 disabled:opacity-50 ${
+                notifSubscribed ? "bg-indigo-600" : "bg-gray-200"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${
+                  notifSubscribed ? "translate-x-6" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </div>
+        )}
+      </div>
+
+      <h2 className="text-lg font-bold text-gray-900">예산 설정</h2>
 
       {/* 현재 예산 */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
