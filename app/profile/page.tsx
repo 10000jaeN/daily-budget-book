@@ -25,6 +25,10 @@ export default function ProfilePage() {
   const [colorChip, setColorChip] = useState("#6366f1");
   const [colorMsg, setColorMsg] = useState("");
   const [colorLoading, setColorLoading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteMsg, setDeleteMsg] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/users/me").then((r) => r.json()).then((d) => {
@@ -67,6 +71,23 @@ export default function ProfilePage() {
     if (res.ok) setSavedName(name);
     setNameMsg(res.ok ? "이름이 변경되었습니다." : (data.error ?? "오류 발생"));
     setNameLoading(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteLoading(true);
+    setDeleteMsg("");
+    const res = await fetch("/api/users/me", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: deletePassword }),
+    });
+    if (res.ok) {
+      await signOut({ callbackUrl: "/" });
+    } else {
+      const data = await res.json();
+      setDeleteMsg(data.error ?? "오류가 발생했습니다.");
+      setDeleteLoading(false);
+    }
   };
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
@@ -218,6 +239,51 @@ export default function ProfilePage() {
       >
         로그아웃
       </button>
+
+      {/* 회원탈퇴 */}
+      <button
+        onClick={() => { setShowDeleteDialog(true); setDeletePassword(""); setDeleteMsg(""); }}
+        className="w-full text-red-400 text-sm py-2 hover:text-red-600 transition-colors"
+      >
+        회원탈퇴
+      </button>
+
+      {/* 탈퇴 확인 다이얼로그 */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">회원탈퇴</h3>
+            <p className="text-sm text-gray-500">
+              탈퇴하면 모든 지출 기록, 목표, 알림 등 계정 데이터가 <span className="text-red-500 font-medium">영구적으로 삭제</span>됩니다. 정말 탈퇴하시겠습니까?
+            </p>
+            <input
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder="비밀번호 확인"
+              autoComplete="current-password"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-red-400"
+            />
+            {deleteMsg && <p className="text-sm text-red-500">{deleteMsg}</p>}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteDialog(false)}
+                disabled={deleteLoading}
+                className="flex-1 bg-gray-100 text-gray-600 rounded-xl py-3 text-base font-medium hover:bg-gray-200 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteLoading || !deletePassword}
+                className="flex-1 bg-red-500 text-white rounded-xl py-3 text-base font-semibold hover:bg-red-600 disabled:opacity-50 transition-colors"
+              >
+                {deleteLoading ? "처리 중..." : "탈퇴하기"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

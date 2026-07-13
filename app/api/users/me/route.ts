@@ -62,3 +62,46 @@ export async function PUT(req: NextRequest) {
 
   return NextResponse.json({ id: updated.id, name: updated.name, email: updated.email });
 }
+
+export async function DELETE(req: NextRequest) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "로그인 필요" }, { status: 401 });
+
+  const { password } = await req.json();
+  if (!password) return NextResponse.json({ error: "비밀번호를 입력해주세요." }, { status: 400 });
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  if (!user) return NextResponse.json({ error: "사용자 없음" }, { status: 404 });
+
+  const isValid = await bcrypt.compare(password, user.passwordHash);
+  if (!isValid) return NextResponse.json({ error: "비밀번호가 올바르지 않습니다." }, { status: 400 });
+
+  const userId = session.user.id;
+
+  await prisma.$transaction(async (tx) => {
+    // BudgetChangeVote: 내가 만든 요청의 투표 + 내가 한 투표
+    const myRequests = await tx.budgetChangeRequest.findMany({
+      where: { requestedById: userId },
+      select: { id: true },
+    });
+    const myRequestIds = myRequests.map((r) => r.id);
+
+    await tx.budgetChangeVote.deleteMany({
+      where: {
+        OR: [
+          { userId },
+          ...(myRequestIds.length > 0 ? [{ requestId: { in: myRequestIds } }] : []),
+        ],
+      },
+    });
+    await tx.budgetChangeRequest.deleteMany({ where: { requestedById: userId } });
+    await tx.pushSubscription.deleteMany({ where: { userId } });
+    await tx.notification.deleteMany({ where: { userId } });
+    await tx.savingGoal.deleteMany({ where: { userId } });
+    await tx.spending.deleteMany({ where: { userId } });
+    await tx.invite.deleteMany({ where: { invitedById: userId } });
+    await tx.user.delete({ where: { id: userId } });
+  });
+
+  return NextResponse.json({ ok: true });
+}
